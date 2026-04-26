@@ -35,6 +35,10 @@
                             <p>Loading AI Model...</p>
                         </div>
                     </div>
+                    
+                    <div class="raw-data-container">
+                        <strong>Raw Data:</strong> <span id="raw-data-output">Waiting for detections...</span>
+                    </div>
                 </div>
 
                 <div class="info-section">
@@ -55,7 +59,10 @@
                             <span id="last-alert" class="stat-value">None</span>
                         </div>
                         
-                        <button id="start-btn" class="primary-btn" disabled>Start Monitoring</button>
+                        <div class="button-group">
+                            <button id="dashboard-btn" class="secondary-btn">View Dashboard</button>
+                            <button id="start-btn" class="primary-btn" disabled>Start Monitoring</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -65,6 +72,39 @@
             <p>Powered by Roboflow & Web AI</p>
         </footer>
     </div>
+
+    <!-- Dashboard Modal -->
+    <div class="modal-overlay hidden" id="dashboard-modal">
+        <div class="modal-content">
+            <button class="close-btn" id="close-dashboard">&times;</button>
+            <h2>Driver Dashboard</h2>
+            
+            <div class="dashboard-stats">
+                <div class="dash-card">
+                    <div class="dash-icon">⏱️</div>
+                    <div class="dash-title">Session Time</div>
+                    <div class="dash-value" id="dash-time">00:00:00</div>
+                </div>
+                
+                <div class="dash-card">
+                    <div class="dash-icon">⚠️</div>
+                    <div class="dash-title">Total Alerts</div>
+                    <div class="dash-value" id="dash-alerts">0</div>
+                </div>
+                
+                <div class="dash-card">
+                    <div class="dash-icon">🎯</div>
+                    <div class="dash-title">Focus Score</div>
+                    <div class="dash-value" id="dash-score">100%</div>
+                </div>
+            </div>
+            
+            <div class="dash-details">
+                <p>This dashboard tracks your driving session in real-time. Keep your focus score high by keeping your eyes on the road and avoiding distractions like your phone.</p>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
