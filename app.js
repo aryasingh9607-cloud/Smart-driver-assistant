@@ -215,8 +215,8 @@ async function detectFrame() {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
-            // URL encode the base64 string to prevent '+' from turning into spaces during upload
-            body: encodeURIComponent(base64Image)
+            // Send raw base64 string, Roboflow API parses this perfectly
+            body: base64Image
         });
         
         if (!response.ok) {
