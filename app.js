@@ -23,7 +23,39 @@ let lastAlertTime = 0;
 const ALERT_COOLDOWN = 3000; // 3 seconds between beeps
 
 // Define classes that should trigger an alert
-const DANGER_CLASSES = ['drowsy', 'sleeping', 'yawning', 'distracted', 'phone', 'smoking'];
+const DANGER_CLASSES = ['closed_eyes', 'phone'];
+
+// Dashboard & Session Tracking
+let sessionStartTime = 0;
+let totalAlerts = 0;
+let focusScore = 100;
+let dashboardInterval;
+
+const rawDataOutput = document.getElementById('raw-data-output');
+const dashboardBtn = document.getElementById('dashboard-btn');
+const dashboardModal = document.getElementById('dashboard-modal');
+const closeDashboardBtn = document.getElementById('close-dashboard');
+const dashTimeEl = document.getElementById('dash-time');
+const dashAlertsEl = document.getElementById('dash-alerts');
+const dashScoreEl = document.getElementById('dash-score');
+
+// Format time for dashboard
+function formatTime(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+    const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+    const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+}
+
+// Dashboard Event Listeners
+dashboardBtn.addEventListener('click', () => {
+    dashboardModal.classList.remove('hidden');
+});
+
+closeDashboardBtn.addEventListener('click', () => {
+    dashboardModal.classList.add('hidden');
+});
 
 // Audio Context for Beep
 let audioCtx;
@@ -90,12 +122,16 @@ function drawPredictions(predictions) {
     let dangerDetected = false;
     let highestConfidenceClass = '';
     
+    // Update raw data string
+    let rawStr = '';
+    
     predictions.forEach(pred => {
-        // Roboflow might return class name in lower or upper case
         const className = pred.class.toLowerCase();
-        // Assume anything that isn't safe or alert is a danger (adjust based on your actual model classes)
-        const isDanger = DANGER_CLASSES.includes(className) || 
-                         (!['alert', 'awake', 'safe'].includes(className));
+        // Since we explicitly mapped the classes, only these two are danger
+        const isDanger = DANGER_CLASSES.includes(className);
+        
+        // Append to raw data string
+        rawStr += `[${pred.class}: ${Math.round(pred.confidence * 100)}%] `;
         
         if (isDanger && pred.confidence > 0.4) {
             dangerDetected = true;
@@ -118,6 +154,12 @@ function drawPredictions(predictions) {
         ctx.fillText(`${pred.class} ${Math.round(pred.confidence * 100)}%`, pred.x - pred.width / 2 + 5, pred.y - pred.height / 2 - 7);
     });
     
+    if (predictions.length === 0) {
+        rawDataOutput.textContent = "No detections";
+    } else {
+        rawDataOutput.textContent = rawStr;
+    }
+    
     updateUI(dangerDetected, highestConfidenceClass);
 }
 
@@ -127,7 +169,18 @@ function updateUI(dangerDetected, dangerClass) {
         alertIcon.textContent = '⚠️';
         alertTitle.textContent = 'WARNING: ' + dangerClass.toUpperCase();
         alertDesc.textContent = 'Please focus on the road!';
-        playBeep();
+        
+        // Only update stats if we actually beep (cooldown logic handles this inside playBeep)
+        const now = Date.now();
+        if (now - lastAlertTime >= ALERT_COOLDOWN) {
+            playBeep();
+            totalAlerts++;
+            focusScore = Math.max(0, focusScore - 5); // Reduce score by 5 per alert
+            
+            // Update Dashboard UI
+            dashAlertsEl.textContent = totalAlerts;
+            dashScoreEl.textContent = focusScore + '%';
+        }
         
         const timeStr = new Date().toLocaleTimeString();
         lastAlertEl.textContent = `${dangerClass} at ${timeStr}`;
@@ -224,6 +277,19 @@ startBtn.addEventListener('click', () => {
         startBtn.style.background = '#ff4d4f';
         statusBadge.textContent = "Active Monitoring";
         statusBadge.classList.add('active');
+        
+        // Start Session Tracking
+        sessionStartTime = Date.now();
+        totalAlerts = 0;
+        focusScore = 100;
+        dashAlertsEl.textContent = totalAlerts;
+        dashScoreEl.textContent = focusScore + '%';
+        dashTimeEl.textContent = "00:00:00";
+        
+        dashboardInterval = setInterval(() => {
+            dashTimeEl.textContent = formatTime(Date.now() - sessionStartTime);
+        }, 1000);
+        
         detectFrame();
     } else {
         isMonitoring = false;
@@ -232,7 +298,11 @@ startBtn.addEventListener('click', () => {
         statusBadge.textContent = "System Ready";
         statusBadge.classList.remove('active');
         ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+        rawDataOutput.textContent = "Waiting for detections...";
         updateUI(false, '');
+        
+        // Stop Session Tracking
+        clearInterval(dashboardInterval);
     }
 });
 
