@@ -197,49 +197,11 @@ let lastFrameTime = performance.now();
 
 // Inference Loop
 async function detectFrame() {
-    if (!isMonitoring) return;
+    if (!isMonitoring || !model) return;
     
     try {
-        // Capture frame from webcam
-        const captureCanvas = document.createElement('canvas');
-        captureCanvas.width = 416; // resize for faster upload
-        captureCanvas.height = 416 * (webcamElement.videoHeight / webcamElement.videoWidth);
-        const capCtx = captureCanvas.getContext('2d');
-        capCtx.drawImage(webcamElement, 0, 0, captureCanvas.width, captureCanvas.height);
-        
-        const base64Image = captureCanvas.toDataURL('image/jpeg', 0.8).split(',')[1];
-        
-        // Call Roboflow REST API directly - Added &confidence=10 to force the server to return lower confidence detections
-        const response = await fetch(`https://detect.roboflow.com/${MODEL_ID}/${MODEL_VERSION}?api_key=${ROBOFLOW_API_KEY}&confidence=10`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            // Send raw base64 string, Roboflow API parses this perfectly
-            body: base64Image
-        });
-        
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.predictions) {
-            // Scale predictions back to overlay canvas dimensions
-            const scaleX = overlayCanvas.width / captureCanvas.width;
-            const scaleY = overlayCanvas.height / captureCanvas.height;
-            
-            const scaledPredictions = data.predictions.map(p => ({
-                ...p,
-                x: p.x * scaleX,
-                y: p.y * scaleY,
-                width: p.width * scaleX,
-                height: p.height * scaleY
-            }));
-            
-            drawPredictions(scaledPredictions);
-        }
+        const predictions = await model.detect(webcamElement);
+        drawPredictions(predictions);
         
         // Calculate FPS
         const now = performance.now();
@@ -251,12 +213,8 @@ async function detectFrame() {
         console.error("Inference error:", error);
     }
     
-    // Request next frame continuously (run around 5 FPS to avoid extreme rate limits)
-    setTimeout(() => {
-        if (isMonitoring) {
-            requestAnimationFrame(detectFrame);
-        }
-    }, 200);
+    // Request next frame continuously
+    requestAnimationFrame(detectFrame);
 }
 
 // Initialization
@@ -264,9 +222,34 @@ async function initApp() {
     statusBadge.textContent = "Requesting Camera...";
     await setupWebcam();
     
-    statusBadge.textContent = "System Ready";
-    loadingOverlay.classList.add('hidden');
-    startBtn.disabled = false;
+    statusBadge.textContent = "Loading Model...";
+    try {
+        // Lower confidence to 10% to ensure we see all detections
+        roboflow.auth({
+            publishable_key: ROBOFLOW_API_KEY
+        }).load({
+            model: MODEL_ID,
+            version: MODEL_VERSION
+        }).then(function(loadedModel){
+            model = loadedModel;
+            
+            // Try to override the default confidence if the model supports it
+            if(model.configure) {
+                model.configure({ threshold: 0.1 });
+            }
+            
+            loadingOverlay.classList.add('hidden');
+            statusBadge.textContent = "System Ready";
+            startBtn.disabled = false;
+        }).catch(function(error) {
+            console.error("Roboflow load error:", error);
+            loadingOverlay.querySelector('p').textContent = "Error loading model.";
+            loadingOverlay.querySelector('.spinner').style.display = 'none';
+        });
+    } catch (error) {
+        console.error("Error loading model:", error);
+        alert("Failed to load AI model. Please check your API key and network.");
+    }
 }
 
 startBtn.addEventListener('click', () => {
