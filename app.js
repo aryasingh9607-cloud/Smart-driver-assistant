@@ -133,7 +133,8 @@ function drawPredictions(predictions) {
         // Append to raw data string
         rawStr += `[${pred.class}: ${Math.round(pred.confidence * 100)}%] `;
         
-        if (isDanger && pred.confidence > 0.4) {
+        // Lowered threshold to 0.15 to trigger more easily for testing
+        if (isDanger && pred.confidence > 0.15) {
             dangerDetected = true;
             highestConfidenceClass = pred.class;
         }
@@ -208,13 +209,14 @@ async function detectFrame() {
         
         const base64Image = captureCanvas.toDataURL('image/jpeg', 0.8).split(',')[1];
         
-        // Call Roboflow REST API directly
-        const response = await fetch(`https://detect.roboflow.com/${MODEL_ID}/${MODEL_VERSION}?api_key=${ROBOFLOW_API_KEY}`, {
+        // Call Roboflow REST API directly - Added &confidence=10 to force the server to return lower confidence detections
+        const response = await fetch(`https://detect.roboflow.com/${MODEL_ID}/${MODEL_VERSION}?api_key=${ROBOFLOW_API_KEY}&confidence=10`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
-            body: base64Image
+            // URL encode the base64 string to prevent '+' from turning into spaces during upload
+            body: encodeURIComponent(base64Image)
         });
         
         if (!response.ok) {
