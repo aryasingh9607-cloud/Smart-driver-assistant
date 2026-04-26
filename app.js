@@ -1,8 +1,7 @@
-// Roboflow configuration
-const ROBOFLOW_API_KEY = "Hm273zwdfK88fiQf1asy";
-const MODEL_ID = "smart-driver-assistant-vfbr2";
-const MODEL_VERSION = "1";
-
+// --- Configuration ---
+const ROBOFLOW_API_KEY = "lAcOz9PVeKyuhcUSc0tj";
+const ROBOFLOW_PROJECT = "study_agent";
+const ROBOFLOW_VERSION = "3";
 // DOM Elements
 const webcamElement = document.getElementById('webcam');
 const overlayCanvas = document.getElementById('overlay');
