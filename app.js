@@ -210,7 +210,7 @@ async function detectFrame() {
         const base64Image = captureCanvas.toDataURL('image/jpeg', 0.8).split(',')[1];
         
         // Call Roboflow REST API directly
-        const response = await fetch(`https://detect.roboflow.com/${MODEL_ID}/${MODEL_VERSION}?api_key=${ROBOFLOW_API_KEY}`, {
+        const response = await fetch(`https://detect.roboflow.com/${MODEL_ID}/${MODEL_VERSION}?api_key=${ROBOFLOW_API_KEY}&confidence=5`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
