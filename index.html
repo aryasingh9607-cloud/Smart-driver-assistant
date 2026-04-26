@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Driver Assistant | AI Drowsiness Detection</title>
+    <meta name="description" content="AI-powered Driver Assistant detecting drowsiness and distraction in real-time.">
+    <!-- Google Fonts for Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Roboflow JS -->
+    <script src="https://cdn.roboflow.com/0.2.26/roboflow.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <span class="icon">🚗</span>
+                <h1>Smart Driver Assistant</h1>
+            </div>
+            <div class="status-badge" id="system-status">System Initializing...</div>
+        </header>
+
+        <main>
+            <div class="dashboard">
+                <div class="video-section">
+                    <div class="video-container" id="video-wrapper">
+                        <!-- Webcam Feed -->
+                        <video id="webcam" autoplay playsinline muted></video>
+                        <!-- Overlay Canvas for Bounding Boxes -->
+                        <canvas id="overlay"></canvas>
+                        
+                        <div class="loading-overlay" id="loading">
+                            <div class="spinner"></div>
+                            <p>Loading AI Model...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <div class="alert-panel safe" id="alert-panel">
+                        <div class="alert-icon" id="alert-icon">🛡️</div>
+                        <h2 id="alert-title">Driver is Alert</h2>
+                        <p id="alert-desc">Monitoring for drowsiness and distractions.</p>
+                    </div>
+
+                    <div class="stats-panel">
+                        <h3>Detection Stats</h3>
+                        <div class="stat-item">
+                            <span>FPS</span>
+                            <span id="fps-counter" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Last Alert</span>
+                            <span id="last-alert" class="stat-value">None</span>
+                        </div>
+                        
+                        <button id="start-btn" class="primary-btn" disabled>Start Monitoring</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Powered by Roboflow & Web AI</p>
+        </footer>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
